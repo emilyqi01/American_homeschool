@@ -17,4 +17,7 @@ A detailed description of your project. Include the purpose of the project, the 
 
 ## Getting Started
 
+The data set is a CSV file, [home_school_district.csv](https://github.com/washingtonpost/data_home_schooling/blob/main/home_school_district.csv), [home_school_state.csv](https://github.com/washingtonpost/data_home_schooling/blob/main/home_school_state.csv), and a data [dictionary](https://github.com/washingtonpost/data_home_schooling/blob/main/home_school_data_dictionary.csv) explaining each file which were derived from [data_home_schooling](https://github.com/washingtonpost/data_home_schooling.git).
+
+
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
