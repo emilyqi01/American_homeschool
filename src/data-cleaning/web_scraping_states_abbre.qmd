@@ -1,3 +1,4 @@
+The dataset includes the names of American states. However, the full names are somewhat lengthy and may not be practical for use in visualizations. Thus, the next step involves retrieving the abbreviations for all 50 states from the website: https://www.50states.com/abbreviations.htm using web scraping techniques.
 ```{r}
 # get the abbreviation of American states by web-scraping
 # the table is from the webside: https://www.50states.com/abbreviations.htm
@@ -35,12 +36,9 @@ states_abbre <- data.frame(
                             "S.Dak.","Tenn.","Tex.","Utah","V.T.","Va.",
                             "Wash.","W.Va.","Wis.","Wyo.")
 )
+states_abbre
+write.csv(states_abbre, "../../data/derived/states_abbreviation.csv", row.names = TRUE) 
 ```
 
-```{r}
-# add columns to home_school_state.csv
-# read the state csv
-school_state <- read.csv("../../data/raw/home_school_state.csv")
-school_state
-```
+
 
