@@ -1,0 +1,84 @@
+```{r}
+library(dplyr)
+```
+
+```{r}
+# read the data
+school_state <- read.csv("../../data/raw/home_school_state.csv")
+print(summary(school_state))
+# group by state and count
+grouped_school_state <- school_state %>% group_by(state) %>% 
+  summarise(count = n())
+grouped_school_state
+```
+By discovering the dataset, there are 33 states, each with 2017-2022 population of home-school enrollment. However, the data has missing NA. I first delete all the states with incomplete data.
+```{r}
+# deal with nas
+rows_with_na <- apply(school_state, 1, function(row) any(is.na(row)))
+print(school_state[rows_with_na, ])
+# states' name to be deleted
+missing_state = c("MAINE","RHODE ISLAND","PENNSYLVANIA","TENNESSEE")
+# filter and get a new dataset
+homeschool_update <- school_state %>% filter(!state %in% missing_state)
+#check if there is still nas
+summary(homeschool_update) 
+group_state = homeschool_update %>% group_by(state) %>% 
+  summarise(count = n())
+group_state
+```
+Thus, we will have a dataset with 29 states of America. Each state hs completed data for the population of home school enrollment from 2017- 2022.(6 years)
+
+```{r}
+head(homeschool_update)
+```
+
+Here is a graph 
+```{r}
+library(ggplot2)
+ggplot(homeschool_update, aes(x = year, y = homeschool_students, group = state, color = state)) +
+  geom_line() +
+  geom_point() +  # Optional: adds points at each data point
+  theme_minimal() +
+  labs(title = "Population Change Over 6 Years for 30 States",
+       x = "Year",
+       y = "Population") +
+    theme(legend.position = "right",  # Positions the legend on the right
+        legend.title = element_text(face = "bold"),  # Bold legend title
+        legend.text = element_text(size = 6),  # Smaller text for legend items
+        legend.key.size = unit(0.5, "cm"),  # Smaller keys
+        legend.box.background = element_rect(colour = "black", linewidth = 0.2),  # Border around the legend
+        legend.spacing.x = unit(0.1, "cm"),  # Spacing between columns
+        legend.box = "vertical")  # Align legend vertically
+
+```
+
+
+
+```{r}
+source('../helper-function/growth_rate.R')
+# Using the function
+# Assuming your dataframe is named df, state column name is "State", year column name is "Year", and population column name is "Population"
+growth_df <- calculate_growth_proportion(homeschool_update, "state", "year", "homeschool_students")
+growth_df
+```
+
+
+```{r}
+# Assuming growth_df is your dataframe
+top <- growth_df %>% arrange(desc(abs_growth))   # Sort in descending order of proportion
+print(top)
+# Assuming growth_df is your dataframe
+top_ten_states <- growth_df %>%
+  arrange(desc(abs_growth)) %>%  # Sort in descending order of proportion
+  group_by(year) %>%  # Group by year
+  arrange(desc(year)) %>%  # Within each group, sort in descending order of year
+  top_n(5) %>%  # Select top ten rows for each year
+  group_by(state) %>%  # Group by State
+  summarise(count = n()) %>% # Count the number of occurrences of each state
+  arrange(desc(count))
+# View the top ten states for each year
+print(top_ten_states)
+
+selecting <- c("FLORIDA","DISTRICT OF COLUMBIA","KANSAS","COLORADO")
+```
+
