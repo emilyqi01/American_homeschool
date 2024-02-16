@@ -10,6 +10,13 @@ The goal of American_homeschool Project is to discover the homeschooling populat
 A detailed description of your project. Include the purpose of the project, the problems it aims to solve, and the value it provides. Mention the datasets, methods, and technologies used.
 
 ## Instructions to start the project
+### step 1 data-cleaning
+Go to scr/data-cleaning folder first run delete_nas.qmd to delete all missing data.
+Then run web_scrapping_states_abbre.qmd file to create a new dataframe with American states and abbreviations.
+Then run add_abbre.qmd file.
+### step 2 analyses
+
+### step 3
 
 ## Dataset preprocessing
 
