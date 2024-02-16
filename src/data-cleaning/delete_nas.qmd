@@ -1,0 +1,39 @@
+**To deal with the NAs in our datasets**
+```{r}
+library(dplyr)
+```
+
+```{r}
+# read the data
+school_state <- read.csv("../../data/raw/home_school_state.csv")
+print(summary(school_state))
+# group by state and count
+grouped_school_state <- school_state %>% group_by(state) %>% 
+  summarise(count = n())
+grouped_school_state
+```
+By discovering the dataset, there are 33 states, each with 2017-2022 population of home-school enrollment. However, the data has missing NA. I first delete all the states with incomplete data.
+```{r}
+# deal with nas
+rows_with_na <- apply(school_state, 1, function(row) any(is.na(row)))
+# lists of state names which have NAs
+missing_state <- unique(school_state[rows_with_na, "state"])
+# filter and get a new dataset
+homeschool_update <- school_state %>% filter(!state %in% missing_state)
+#check if there is still nas
+summary(homeschool_update) 
+# group by state and count
+group_state = homeschool_update %>% group_by(state) %>% 
+  summarise(count = n())
+group_state
+```
+Thus, we will have a dataset with 29 states of America. Each state hs completed data for the population of home school enrollment from 2017- 2022.(6 years)
+
+```{r}
+head(homeschool_update)
+```
+Save the data to derived folder for further use.
+```{r}
+write.csv(homeschool_update, "../../data/derived/homeschool_update.csv", row.names = TRUE) 
+```
+
