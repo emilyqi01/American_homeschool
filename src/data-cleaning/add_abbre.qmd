@@ -60,6 +60,6 @@ state_update
 ```
 save the data to derived folder
 ```{r}
-write.csv(state_update, "../../data/derived/state_update.csv", row.names = TRUE)
+write.csv(state_update, "../../data/derived/state_update.csv", row.names = FALSE)
 ```
 
