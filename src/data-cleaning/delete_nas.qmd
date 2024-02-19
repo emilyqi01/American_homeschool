@@ -34,6 +34,6 @@ head(homeschool_update)
 ```
 Save the data to derived folder for further use.
 ```{r}
-write.csv(homeschool_update, "../../data/derived/homeschool_update.csv", row.names = TRUE) 
+write.csv(homeschool_update, "../../data/derived/homeschool_update.csv",row.names = FALSE) 
 ```
 
