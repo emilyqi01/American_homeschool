@@ -1,84 +1,139 @@
-```{r}
-library(dplyr)
-```
+First, we will have a dataset with 29 states of America. Each state hs completed data for the population of home school enrollment from 2017- 2022.(6 years)
 
 ```{r}
+library(dplyr)
+library(grid)
+library(gridExtra)
+library(ggthemes)
+library(magick)
 # read the data
-school_state <- read.csv("../../data/raw/home_school_state.csv")
+school_state <- read.csv("../data/derived/state_update.csv")
 print(summary(school_state))
 # group by state and count
 grouped_school_state <- school_state %>% group_by(state) %>% 
   summarise(count = n())
-grouped_school_state
-```
-By discovering the dataset, there are 33 states, each with 2017-2022 population of home-school enrollment. However, the data has missing NA. I first delete all the states with incomplete data.
-```{r}
-# deal with nas
-rows_with_na <- apply(school_state, 1, function(row) any(is.na(row)))
-print(school_state[rows_with_na, ])
-# states' name to be deleted
-missing_state = c("MAINE","RHODE ISLAND","PENNSYLVANIA","TENNESSEE")
-# filter and get a new dataset
-homeschool_update <- school_state %>% filter(!state %in% missing_state)
-#check if there is still nas
-summary(homeschool_update) 
-group_state = homeschool_update %>% group_by(state) %>% 
-  summarise(count = n())
-group_state
-```
-Thus, we will have a dataset with 29 states of America. Each state hs completed data for the population of home school enrollment from 2017- 2022.(6 years)
-
-```{r}
-head(homeschool_update)
 ```
 
-Here is a graph 
+Here is a raw graph showing all the states provided from the dataset and the population change over 6 years.
 ```{r}
 library(ggplot2)
-ggplot(homeschool_update, aes(x = year, y = homeschool_students, group = state, color = state)) +
+ggplot(school_state, aes(x = year, y = homeschool_students, group = state, color = state)) +
   geom_line() +
-  geom_point() +  # Optional: adds points at each data point
+  geom_point() + 
   theme_minimal() +
   labs(title = "Population Change Over 6 Years for 30 States",
        x = "Year",
        y = "Population") +
     theme(legend.position = "right",  # Positions the legend on the right
         legend.title = element_text(face = "bold"),  # Bold legend title
-        legend.text = element_text(size = 6),  # Smaller text for legend items
-        legend.key.size = unit(0.5, "cm"),  # Smaller keys
-        legend.box.background = element_rect(colour = "black", linewidth = 0.2),  # Border around the legend
-        legend.spacing.x = unit(0.1, "cm"),  # Spacing between columns
-        legend.box = "vertical")  # Align legend vertically
-
+        legend.text = element_text(size = 6),  
+        legend.key.size = unit(0.5, "cm"), 
+        legend.box.background = element_rect(colour = "black", linewidth = 0.2), 
+        legend.spacing.x = unit(0.1, "cm"), 
+        legend.box = "vertical")  
 ```
 
-
+Based on the graph, we can find out there are several states with obvious trends, which is "FLORIDA", "GEORGIA", "CALIFORNIA" and "VIRGINIA"
+To find out which states have fluctuated the growth the most from 2017-2023, I first explore and calculate all the growth rate for each year's states.
 
 ```{r}
-source('../helper-function/growth_rate.R')
-# Using the function
-# Assuming your dataframe is named df, state column name is "State", year column name is "Year", and population column name is "Population"
-growth_df <- calculate_growth_proportion(homeschool_update, "state", "year", "homeschool_students")
+source('../analyses/helper-function/growth_rate.R')
+growth_df <- calculate_growth_proportion(school_state, "state", "year", "homeschool_students")
 growth_df
 ```
-
-
+Then I first sort the calculated growth rate by the absolute growth rate in descending order and select top 3 states' name.
+Also, according to the same calculated dataframe, I group it by years and try to select the top 5 most fluctuated states each year. Counting the appearance of states in top 5 and still choose the first three. 
+At last, I intersect two dataframes to get the most important state over years' home school growth rate.
 ```{r}
-# Assuming growth_df is your dataframe
-top <- growth_df %>% arrange(desc(abs_growth))   # Sort in descending order of proportion
-print(top)
-# Assuming growth_df is your dataframe
-top_ten_states <- growth_df %>%
+#df1
+top_three_df1 <- growth_df  %>% 
+  ungroup   %>% 
+  arrange(desc(abs_growth)) %>%  # Sort the data frame in descending order by the 'abs_growth' column
+  slice_head(n = 3)  # Get the top 3 state
+#df2
+top_three_df2 <- growth_df %>%
   arrange(desc(abs_growth)) %>%  # Sort in descending order of proportion
   group_by(year) %>%  # Group by year
-  arrange(desc(year)) %>%  # Within each group, sort in descending order of year
+ # arrange(desc(year)) %>%  # Within each group, sort in descending order of year
   top_n(5) %>%  # Select top ten rows for each year
   group_by(state) %>%  # Group by State
   summarise(count = n()) %>% # Count the number of occurrences of each state
-  arrange(desc(count))
-# View the top ten states for each year
-print(top_ten_states)
+  arrange(desc(count)) %>%
+  slice_head(n = 3)
 
-selecting <- c("FLORIDA","DISTRICT OF COLUMBIA","KANSAS","COLORADO")
+intersection <- intersect(top_three_df1$state, top_three_df2$state)
+
+```
+
+```{r}
+selected_states <- c(intersection,"FLORIDA", "GEORGIA", "CALIFORNIA", "VIRGINIA","KENTUCKY")
+# Filter growth_df for the selected states, get distinct abbreviations along with their corresponding state
+selected_states_abbre <- school_state %>%
+  ungroup() %>%  
+  filter(state %in% selected_states) %>%
+  select(state, Abbreviation) %>%  # Select both state and Abbreviation to keep the grouping context
+  distinct()
+```
+
+
+```{r, warning=FALSE}
+special_theme = theme(
+  # set the plot ratio
+  aspect.ratio = 165/180,
+  # set the title size and adjust its position
+  plot.title = element_text(size = unit(11, "pt"),hjust = 0,vjust = -5),
+  # set the subtitle size and adjust its position
+  plot.subtitle = element_text(size = unit(9.5, "pt"),hjust = 0,vjust = -7),
+  # set the legend size and adjust its position
+  legend.title = element_text(size = unit(7.5, "pt")),
+  legend.key.size = unit(7.5, "pt"),
+  legend.margin = margin(t = 20, r = 0, b = 0, l = -135, unit = "pt"),
+  legend.text = element_text(size = unit(7.5, "pt")),
+  # set the caption size and color 
+  plot.caption = element_text(hjust = 0, vjust = 2, size = unit(6.5, "pt"), colour = "#404040"),
+  # the economist style does not include x and y title, so I hide them
+  axis.title.x =  element_blank(),
+  axis.text.x = element_text(angle = 0, vjust = 6, hjust = 0.5,size = unit(7, "pt")),
+  axis.text.y.right  = element_text(size = unit(7, "pt"),hjust = 1, vjust = -0.5),
+  # Hide the default y-axis title
+  axis.title.y = element_blank(),  
+  # the major grid line should be grey with specific thickness
+  panel.grid.major = element_line(color = "#B7C6CF", linewidth = unit(0.5, "pt")),
+  # the x line should be black with specific thickness
+  axis.line.x  = element_line(color = "black", linewidth = unit(0.4, "pt")),
+  plot.margin = margin(t = 0, r = -10, b = 0, l = 0, unit = "pt"),
+  # set the background to be white for new web version
+  panel.background = element_rect(fill = "white", colour = NA),
+  plot.background = element_rect(fill = "white", colour = NA)
+  )
+
+#new data frame with only those 6 focus areas
+highlight_data <- school_state %>%
+  filter(Abbreviation %in% selected_states_abbre$Abbreviation)
+
+highlight_colors <- c("#17648d", "#51bec7", "#d6ab63",  "#843844", "#008c8f","#a885ac")
+years_to_include <- unique(c(school_state$year))
+#selection of 5 focus areas
+names(highlight_colors) <- selected_states_abbre$Abbreviation
+# line plot
+plots = ggplot(school_state, aes(x = year, y = homeschool_students, group = Abbreviation))+
+  theme_economist() + #using the economist theme
+  geom_line(linewidth = 0.25, color = '#d4dddd') + geom_line(data = highlight_data, aes(color = Abbreviation), linewidth = 0.6) +
+  scale_colour_manual(values = highlight_colors) + 
+  scale_y_continuous(position = "right",labels = scales::label_number_si())+
+  scale_x_discrete(limits = years_to_include, expand = c(0, 0))+
+  labs(title = "American Home schooling ",
+       subtitle = "Enrollments from 2017 - 2023",
+       caption = "Source: Data from The Post's analysis of home-schooling enrollment across the US",
+       y = "Population", x = "Year", color = "State") +
+  special_theme
+# first save the graph
+ggsave("../output/state.png",plots,width = 160/40, height = 165/40,dpi = 300, units = "in")
+# add up the red square as it should be a plot for economist using the libarary magick
+plot_state <- image_read("../output/state.png")
+head <- image_read("../data/Figure/header2.png")
+#update my plot
+plot_update <- image_flatten(c(plot_state,head))
+image_write(plot_update, "../output/state_update.png")
 ```
 
