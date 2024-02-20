@@ -1,133 +1,244 @@
 
-
 ```{r}
-source('../analyses/helper-function/compound_annual_gr.R')
-school_district <- read.csv("../data/derived/district_update.csv")
-school_district
-```
-```{r}
-school_state <- read.csv("../data/derived/state_update.csv")
-b = calculate_cagr(school_state, "state","homeschool_students", "year")
-b
-```
-```{r}
-districts_per_state <- school_district %>%
-  group_by(state, lea_name) %>%
-  summarise(count = n(), .groups = 'drop') %>%
-  ungroup() %>%
-  count(state, sort = TRUE)# This counts the number of unique lea_name entries per state and sorts the results %>% 
-
-
-# View the results
-print(districts_per_state)
-```
-
-
-```{r}
-specific_lea_name = "Abbotsford School District"
-school_district %>% 
-  filter(lea_name == specific_lea_name)
-```
-```{r}
-# Assuming your dataframe column with district names is called 'district_name'
-# and the dataframe is named df
-
-# Define a vector of common phrases to remove
-common_phrases_to_remove <- c("Co Pblc Schs", "Public School District", "School District","County Public Schools","County","City Pblc Schs","City Public Schools")
-
-# Create a regex pattern to match any of the common phrases
-pattern <- paste(common_phrases_to_remove, collapse = "|")
-
-# Remove the phrases from each name
-school_district$lea_name <- gsub(pattern, "", school_district$lea_name)
-
-# Optionally, trim whitespace that may be left at the end of each name
-school_district$lea_name <- trimws(school_district$lea_name)
-
-# View the modified dataframe
-print(school_district)
-
-```
-
-```{r}
-VA = school_district %>% filter(state == "VA")
- 
-DE = school_district %>% filter(state == "DE")
-DE
-WY= school_district %>% filter(state == "WY")
-WY
-MD = school_district %>% filter(state == "MD")
-MD
-```
-
-
-```{r}
-#VA_1 = calculate_cagr(VA, "lea_name", "homeschool_students","year")
-#VA_1 = VA_1 %>% arrange(desc(abs(cagr))) %>% top_n(10)
-DE_1 = calculate_cagr(DE, "lea_name", "homeschool_students","year")%>% arrange(desc(abs(cagr))) %>% slice_head(n = 10)
-WY_1 = calculate_cagr(WY, "lea_name", "homeschool_students","year")%>% arrange(desc(abs(cagr)))%>% slice_head(n = 10)
-WY_1
-MD_1 = calculate_cagr(MD, "lea_name", "homeschool_students","year")%>% arrange(desc(abs(cagr))) %>% slice_head(n = 10)
-MD_1
-combined_df <- bind_rows(
-  list(DE = DE_1, WY = WY_1, MD = MD_1),
-  .id = 'group'
-)
-combined_df
-```
-
-```{r}
+library(dplyr)
+library(purrr)
 library(ggplot2)
 library(tidyverse)
-library(ragg)
-datagroup <- combined_df$group %>% unique() #"A" "B" "C" "D"
-datagroup
-
-allplotdata <- tibble('group' = datagroup,
-                      'lea_name' = paste0('empty_individual_', seq_along(datagroup)),
-                      'cagr' = 0) %>% 
-  bind_rows(combined_df) %>% arrange(group) %>% mutate(xid = 1:n()) %>% 
-  mutate(angle = 90 - 360 * (xid - 0.5) / n()) %>% 
-  mutate(hjust = ifelse(angle < -90, 1, 0)) %>% 
-  mutate(angle = ifelse(angle < -90, angle+180, angle))
-
-allplotdata
-```
-```{r}
-firstxid <- which(str_detect(allplotdata$lea_name, pattern = "empty_individual")) # 1 12 43 58
-
-segment_data <- data.frame('from' = firstxid + 1,
-                           'to' = c(c(firstxid - 1)[-1], nrow(allplotdata)),
-                           'label' = datagroup) %>% 
-  mutate(labelx = as.integer((from + to)/2))
-firstxid
-segment_data
-```
-
-```{r}
 library(scales)
+library(magick)
+source('../analyses/helper-function/compound_annual_gr.R')
+source('../analyses/helper-function/growth_rate.R')
+school_district <- read.csv("../data/derived/district_update.csv")
+school_state <- read.csv("../data/derived/state_update.csv")
+```
+When discovering the districts of each states, the district names sometimes are very long, thus we try to remove the standard descriptor of district name. It will not cause any problem since all the district has a specific `lea_id`.
+```{r}
+# These are common phrases that are to be removed from district names.
+common_phrases_to_remove <- c(
+  "Co Pblc Schs",
+  "Public School District",
+  "School District",
+  "County Public Schools",
+  "County",
+  "City Pblc Schs",
+  "City Public Schools",
+  "Independent"
+)
+pattern <- paste(common_phrases_to_remove, collapse = "|")
+# Use `gsub()` to remove the phrases matched by the regex pattern from each name.
+# `pattern` represents the phrases to remove, and the replacement is an empty string "".
+school_district$lea_name <- gsub(pattern, "", school_district$lea_name)
+# Also, use `trimws()` to remove any whitespace and update the `lea_name`
+school_district$lea_name <- trimws(school_district$lea_name)
+```
 
+
+**Discover CAGR of top 10 districts from each of the selected states**
+```{r}
+#'calculate_cagr' is a function already defined to calculate the Compound Annual Growth Rate (CAGR)
+# a vector of states I want to perform the analysis
+state_list <- c("VA", "FL", "GA", "KY")
+# Initialize an empty list to store results for each state
+results_list <- list()
+
+for (state in state_list) {
+  # Filter the school_district dataframe and only choose the data related to the seleted states
+  state_data <- school_district %>% 
+    filter(state == !!state)
+  # Calculate the CAGR for the filtered data 
+  # Arrange the results in descending order based on the absolute value of CAGR
+  # Select the top 10 LEAs with the highest absolute CAGR
+  state_cagr <- calculate_cagr(state_data, "lea_id", "homeschool_students", "year") %>%
+    arrange(desc(abs(cagr))) %>%
+    slice_head(n = 10)
+  # Add the resulting dataframe to the results_list with the state abbreviation as the key
+  results_list[[state]] <- state_cagr
+}
+# Combine all the dataframes into a single dataframe
+combined_df_cagr <- bind_rows(results_list, .id = 'group')
+# Select only the non-overlapping columns (except the joining column) from the second data frame
+combined_df_cagr <- combined_df_cagr %>%
+  left_join(school_district %>% select(lea_id, lea_name), by = "lea_id") %>% 
+  unique() 
+combined_df_cagr
+```
+
+
+
+
+**Draw a circular bar charts for CAGR**
+Step up all the dataframes used in a graph
+```{r}
+# Extract unique state name from the 'group' column in the combined dataframe
+state_group <- combined_df_cagr$group %>% unique() 
+# Create a tibble with placeholder entries for each group
+update_data <- tibble(
+  'group' = state_group,
+  # Generate placeholder LEA names for each group to differentiate each group visually in the plot
+  'lea_name' = paste0('empty_', seq_along(state_group)), # Placeholder LEA names
+  # Initialize the 'cagr' column with 0 values. 
+  'cagr' = 0 # Placeholder CAGR values
+) %>%
+  # Combine 'update_data' with the actual CAGR data from 'combined_df_cagr'.
+  bind_rows(combined_df_cagr) %>%
+  # Arrange to ensure data is grouped by state.
+  arrange(group) %>%
+  # Assign a unique x-axis identifier (xid) to each row for plotting purposes.
+  mutate(xid = 1:n()) %>%
+  # Calculate the angle for polar coordinates based on the position of each entry. 
+  # to  adjust text orientation in the plot.
+  mutate(angle = 90 - 360 * (xid - 0.5) / n()) %>%
+  # assign hjust value and angles for the text
+  mutate(hjust = ifelse(angle < -90, 1, 0)) %>%
+  mutate(angle = ifelse(angle < -90, angle + 180, angle))
+
+
+
+# define grid lines in the polar plot
+coordy <- tibble(
+  'coordylocation' = seq(from = min(update_data$cagr), to = max(update_data$cagr), 10),
+  'coordytext' = as.character(round(coordylocation, 2)),
+  'x' = 1
+)
+# get the indices of the placeholder rows 
+indices <- which(str_detect(update_data$lea_name, pattern = "empty"))
+# Prepare data for drawing segments between groups in the circular plot
+# These segments separate different states in the circular chart
+# 'from' and 'to' define the start and end points of each segment, using 'firstxid' as reference
+# End just before the next placeholder, with special handling for the last segment
+# Assign labels to each segment using group names
+segment_data <- data.frame(
+  'from' = indices + 1, # Start just after each placeholder
+  'to' = c(c(indices - 1)[-1], nrow(update_data)), 
+  'label' = state_group 
+) %>% 
+  mutate(
+    # Calculate the midpoint between 'from' and 'to' for placing segment labels
+    labelx = as.integer((from + to) / 2)
+  )
+
+```
+
+For the special theme I set the plot's aspect ratio to be 160/165. Text elements such as the plot title and subtitle are given specific font sizes based on the Economics style, while the plot caption is left-aligned with subtle adjustments for optimal placement. I omit the axis titles to maintain focus on the data. And also, both axis texts are made transparent, effectively removing them from view. The background of the panel and the overall plot is set to white without borders since the web version of economist has changed the background to white.
+```{r, warning=FALSE}
+# Define a color palette to use for highlighting different states
+highlight_colors <- c("#17648d", "#51bec7", "#d6ab63", "#008c8f", "#843844", "#a885ac")
+names(highlight_colors) <- update_data$state %>% unique()
+# Set up the ggplot theme with the desired aspect ratio and styling
 special_theme <- theme(
   aspect.ratio = 160/165,
-  plot.caption = element_text(hjust = 0, vjust = -1, size = unit(6.5, "pt"), colour = "#404040"),
+  plot.title = element_text(size = unit(11, "pt"),vjust = -2, hjust = -0.30),
+  plot.subtitle = element_text(size = unit(9.5, "pt"),vjust = -3, hjust = -0.15),
+  plot.caption = element_text(hjust = 0, vjust = 10, size = unit(6.5, "pt"), colour = "#404040"),
+  plot.margin = margin(b = -20,l = 10),
   axis.title = element_blank(),
   legend.position = 'none',
   axis.text.y = element_text(color = "transparent"),
   axis.text.x = element_text(color = "transparent"),
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank(),
-  axis.line = element_blank()
+  axis.line = element_blank(),
+  panel.background = element_rect(fill = "white", colour = NA), # Remove border with colour = NA
+  plot.background = element_rect(fill = "white", colour = NA)
 )
 
-coordy <- tibble('coordylocation' = seq(from = min(allplotdata$cagr), to = max(allplotdata$cagr), 10),
-                 'coordytext' = as.character(round(coordylocation, 2)),
+
+
+
+
+# Construct the circular bar chart with ggplot2
+plot1 = ggplot() + 
+  # Apply the Economist theme
+  theme_economist() +
+  # Create bars for the circular chart, mapping 'xid' to x-axis, 'cagr' to y-axis, and 'group' to fill color
+  geom_bar(data = update_data, aes(x = xid, y = cagr, fill = group), stat = 'identity') + 
+  # change the bar color to the required one
+  scale_fill_manual(values = highlight_colors) +
+  # Add labels for each bar that aren't placeholders, adjusting position, rotation, and justification
+  geom_text(data = update_data %>% filter(!str_detect(lea_name, pattern = "empty")), 
+            aes(x = xid, label = lea_name, y = cagr+10, angle = angle, 
+                hjust = hjust),color="black",size=unit(3,"pt")) + 
+  # Draw segments to visually separate groups
+  geom_segment(data = segment_data, aes(x = from, xend = to), y = -5, yend=-5) + 
+  geom_text(data = segment_data, aes(x = labelx, label = label), y = -15,size = unit(2.5,"pt")) + 
+  geom_text(data = coordy, aes(x = x, y = coordylocation, label = coordytext),
+            color="grey", size=unit(2.5,"pt"), angle=0) + 
+  labs(title = "A District-Level of Home School Growth in the U.S.",
+       subtitle = "Percentage of Compound annual growth rate",
+       caption = "Source:  Data from The Post's analysis of home-schooling enrollment across the US",
+       y = "Population", x = "Year", color = "State") +
+  scale_x_continuous(expand = c(0, 0)) + 
+ scale_y_continuous(limits = c(-50,50)) + 
+  #scale_y_continuous(labels = NULL) +
+  coord_polar() + special_theme
+# Save the circular bar chart to a file
+ggsave("../output/bar_district_cagr.png",plot1,width = 160/30, height = 165/30,dpi = 300, units = "in")
+# Read the saved plot image and a header image using the magick package
+plot1 <- image_read("../output/bar_district_cagr.png")
+head <- image_read("../data/Figure/header2.png")
+# Combine the plot and header
+economist_plot <- image_flatten(c(plot1,head))
+image_write(economist_plot, "../output/bar_district_cagr_update.png")
+```
+
+
+
+
+
+
+**Plot 2**
+
+```{r}
+# extraxt each pair of group and lea from the upper dataframe
+# For consistency, I want to compare the growth rate from 2019-2020 for the same district
+specified_group = combined_df_cagr$group
+specified_lea = combined_df_cagr$lea_id
+specific_pairs <- data.frame(lea_id = specified_lea,state = specified_group)
+# Filter 'school_district' to only include rows that match the LEA ID and state pairs in 'specific_pairs'
+filtered_df <- school_district %>%
+  semi_join(specific_pairs, by = c("lea_id", "state"))
+# Apply the 'calculate_growth_proportion' function to the filtered data
+growth_df_district <- calculate_growth_proportion(filtered_df, "lea_name", "year", "homeschool_students")
+# Filter to include only the year 2020
+# And I only want the relevant columns: LEA name, state, and growth proportion
+growth_df_district = growth_df_district %>% group_by(lea_name,state) %>% filter(year == 2020)%>% select(lea_name,state,proportion)
+```
+
+
+
+
+The following codes are the similar to the one for drawing CAGR circular bar plot.
+```{r, warning=FALSE}
+state_name2 <- growth_df_district$state %>% unique() 
+allplotdata <- tibble('state' = state_name2,
+                      'lea_name' = paste0('empty_', seq_along(state_name2)),
+                      'proportion' = 0) %>% 
+  bind_rows(growth_df_district) %>% arrange(state) %>% mutate(xid = 1:n()) %>% 
+  mutate(angle = 90 - 360 * (xid - 0.5) / n()) %>% 
+  mutate(hjust = ifelse(angle < -90, 1, 0)) %>% 
+  mutate(angle = ifelse(angle < -90, angle+180, angle))
+
+firstxid <- which(str_detect(allplotdata$lea_name, pattern = "empty")) 
+
+segment_data <- data.frame('from' = firstxid + 1,
+                           'to' = c(c(firstxid - 1)[-1], nrow(allplotdata)),
+                           'label' = state_name2) %>% 
+  mutate(labelx = as.integer((from + to)/2))
+
+
+highlight_colors <- c("#17648d", "#51bec7", "#d6ab63", "#008c8f", "#843844", "#a885ac")
+
+coordy <- tibble('coordylocation' = seq(from = min(allplotdata$proportion), to = max(allplotdata$proportion), 30),
+                 'coordytext' = as.character(round(coordylocation, 0)),
                  'x' = 1)
 griddata <- expand.grid('locationx' = firstxid[-1], 'locationy' = coordy$coordylocation)
-# 绘图
-ggplot() + theme_economist() +
-  geom_bar(data = allplotdata, aes(x = xid, y = cagr, fill = group), stat = 'identity') + 
-  geom_text(data = allplotdata %>% filter(!str_detect(lea_name, pattern = "empty_individual")), 
-            aes(x = xid, label = lea_name, y = cagr+10, angle = angle, hjust = hjust),
+
+names(highlight_colors) <- allplotdata$state %>% unique()
+plot2 = ggplot() + theme_economist() +
+  geom_bar(data = allplotdata, aes(x = xid, y = proportion, fill = state), stat = 'identity') + 
+  scale_fill_manual(values = highlight_colors) +
+  geom_text(data = allplotdata %>% filter(!str_detect(lea_name, pattern = "empty")), 
+            aes(x = xid, label = lea_name, y = proportion+10, angle = angle, hjust = hjust),
             color="black",size=unit(3,"pt")) + 
   geom_segment(data = segment_data, aes(x = from, xend = to), y = -5, yend=-5) + 
   geom_text(data = segment_data, aes(x = labelx, label = label), y = -15,size = unit(2.5,"pt")) + 
@@ -136,66 +247,19 @@ ggplot() + theme_economist() +
   geom_segment(data = griddata, 
                aes(x = locationx-0.5, xend = locationx + 0.5, y = locationy, yend = locationy),
                colour = "grey", alpha=0.8, size=2) + 
-  labs(title = "American Home school ",
-       subtitle = "poplation per thousand",
-       caption = "Source: Our World in Data | Chart made by @matteoStats",
+  labs(title = "A District-Level of Home School Growth in the U.S. ",
+       subtitle = "Percentage of Growth rates from 2019-2020",
+       caption = "Source:  Data from The Post's analysis of home-schooling enrollment across the US",
        y = "Population", x = "Year", color = "State") +
   scale_x_continuous(expand = c(0, 0)) + 
- scale_y_continuous(limits = c(-50,50)) + 
-  #scale_y_continuous(labels = NULL) +
+ scale_y_continuous(limits = c(-200,200)) + 
   coord_polar() + special_theme
-  
-#ggsave('plot3.2.pdf',width = 6, height = 6, device = ragg::agg_png())
+
+ggsave("../output/bar_district_gr.png",plot2,width = 160/30, height = 165/30,dpi = 300, units = "in")
+
+plot2 <- image_read("../output/bar_district_gr.png")
+head <- image_read("../data/Figure/header2.png")
+
+economist_plot <- image_flatten(c(plot2,head))
+image_write(economist_plot, "../output/bar_district_gr_update.png")
 ```
-
-```{r}
- library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-# Define your custom theme
-special_theme <- theme(
-  aspect.ratio = 208/290,
-  plot.caption = element_text(hjust = 0, vjust = -1, size = unit(6.5, "pt"), colour = "#404040"),
-  axis.text.x = element_text(angle = 0, vjust = 4, hjust = 0.5, size = unit(7, "pt")),
-  axis.text.y = element_text(size = unit(7, "pt"), hjust = -3, vjust = 0),
-  axis.title = element_blank(),  
-  legend.position = 'none',
-  panel.grid.major = element_line(color = "#B7C6CF", linewidth = unit(0.5, "pt")),
-  axis.line.x  = element_blank()
-)
-
-# Prepare additional data for plotting
-coordy <- tibble(
-  coordylocation = seq(from = min(allplotdata$cagr), to = max(allplotdata$cagr), 10),
-  coordytext = as.character(round(coordylocation, 2)),
-  x = 1
-)
-griddata <- expand.grid(
-  locationx = firstxid[-1], 
-  locationy = coordy$coordylocation
-)
-
-# Main ggplot
-p <- ggplot(allplotdata) + 
-  geom_bar(aes(x = xid, y = cagr, fill = group), stat = 'identity') + 
-  geom_text(data = allplotdata %>% filter(!str_detect(lea_name, "empty_individual")), 
-            aes(x = xid, label = lea_name, y = cagr + 10, angle = angle, hjust = hjust),
-            color = "black", fontface = "bold", alpha = 0.6, size = 2.5) + 
-  geom_segment(data = segment_data, aes(x = from, xend = to, y = -5, yend = -5)) + 
-  geom_text(data = segment_data, aes(x = labelx, label = label), y = -15) + 
-  geom_text(data = coordy, aes(x = x, y = coordylocation, label = coordytext),
-            color = "grey", size = 3, angle = 0, fontface = "bold") + 
-  geom_segment(data = griddata, 
-               aes(x = locationx - 0.5, xend = locationx + 0.5, y = locationy, yend = locationy),
-               colour = "grey", alpha = 0.8, size = 0.6) + 
-  scale_x_continuous(expand = c(0, 0)) + 
-  scale_y_continuous(limits = c(-50, 100)) + 
-  coord_polar() +
-  special_theme
-
-# Print the plot
-p
-
-```
-
