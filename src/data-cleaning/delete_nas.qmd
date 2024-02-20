@@ -1,9 +1,6 @@
 **To deal with the NAs in our datasets**
 ```{r}
 library(dplyr)
-```
-
-```{r}
 # read the data
 school_state <- read.csv("../../data/raw/home_school_state.csv")
 print(summary(school_state))
@@ -34,6 +31,48 @@ head(homeschool_update)
 ```
 Save the data to derived folder for further use.
 ```{r}
-write.csv(homeschool_update, "../../data/derived/homeschool_update.csv",row.names = FALSE) 
+write.csv(homeschool_update, "../../data/derived/state_update.csv",row.names = FALSE) 
 ```
+
+
+# Delete NAs and 0 and change year for district dataset
+
+```{r}
+school_district <- read.csv("../../data/raw/home_school_district.csv")
+school_district
+school_district$year <- sub("^(....)-.*", "\\1", school_district$year)
+school_district
+```
+
+```{r}
+# group by state and count
+grouped_school_district <- school_district %>% group_by(lea_name) %>% 
+  summarise(count = n())
+grouped_school_district
+# deal with nas
+rows_with_na <- apply(school_district, 1, function(row) any(is.na(row)))
+# lists of state names which have NAs
+missing_names <- unique(school_state[rows_with_na, "lea_name"])
+# Filter out rows from school_district where lea_name is NA or lea_name is in the list of missing_names,
+# and also remove rows where 'homeschool_students' is 0
+homeschool_district_update <- school_district %>%
+  filter(!is.na(lea_name) & !(lea_name %in% missing_names) & homeschool_students != 0)
+
+#check if there is still nas
+summary(homeschool_district_update) 
+# group by state and count
+grouped_school_district= homeschool_district_update %>% group_by(lea_name) %>% 
+  summarise(count = n())%>%
+  filter(count == 6) %>% select(lea_name)
+filtered_school_district <- school_district %>%
+  filter(lea_name %in% grouped_school_district$lea_name)
+filtered_school_district
+```
+```{r}
+write.csv(filtered_school_district, "../../data/derived/district_update.csv",row.names = FALSE) 
+```
+
+
+
+
 

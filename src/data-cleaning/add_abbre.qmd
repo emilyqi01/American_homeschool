@@ -3,7 +3,7 @@ Add the abbreviation column to the raw data home_school_state.
 ```{r}
 # add columns to home_school_state.csv
 # read the state csv
-school_state <- read.csv("../../data/derived/homeschool_update.csv")
+school_state <- read.csv("../../data/derived/state_update.csv")
 school_state
 states_abbre <- read.csv("../../data/derived/states_abbreviation.csv")
 states_abbre
@@ -50,16 +50,27 @@ add_state_abbreviation <- function(data_frame, state_col_name, states_abbre) {
   # Return the updated data_frame
   return(data_frame)
 }
+```
 
 
-
+```{r}
 state_update <- add_state_abbreviation(school_state, "state",states_abbre)
 # since the District of Columbia does not find out the abbreviation from the table, I manually change it. 
 state_update$Abbreviation[state_update$state == "DISTRICT OF COLUMBIA"] = "DC"
 state_update 
 ```
+```{r}
+#convert year
+state_update$year <- sub("^(....)-.*", "\\1", state_update$year)
+state_update
+```
+
+
 save the data to derived folder
 ```{r}
 write.csv(state_update, "../../data/derived/state_update.csv", row.names = FALSE)
 ```
+
+
+
 
