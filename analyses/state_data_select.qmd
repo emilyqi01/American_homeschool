@@ -79,7 +79,7 @@ selected_states_abbre <- school_state %>%
 ```{r, warning=FALSE}
 special_theme = theme(
   # set the plot ratio
-  aspect.ratio = 165/180,
+  aspect.ratio = 2/5,
   # set the title size and adjust its position
   plot.title = element_text(size = unit(11, "pt"),hjust = 0,vjust = -5),
   # set the subtitle size and adjust its position
@@ -87,7 +87,7 @@ special_theme = theme(
   # set the legend size and adjust its position
   legend.title = element_text(size = unit(7.5, "pt")),
   legend.key.size = unit(7.5, "pt"),
-  legend.margin = margin(t = 20, r = 0, b = 0, l = -135, unit = "pt"),
+  legend.margin = margin(t = 20, r = 0, b = 0, l = -228, unit = "pt"),
   legend.text = element_text(size = unit(7.5, "pt")),
   # set the caption size and color 
   plot.caption = element_text(hjust = 0, vjust = 2, size = unit(6.5, "pt"), colour = "#404040"),
@@ -121,14 +121,14 @@ plots = ggplot(school_state, aes(x = year, y = homeschool_students, group = Abbr
   geom_line(linewidth = 0.25, color = '#d4dddd') + geom_line(data = highlight_data, aes(color = Abbreviation), linewidth = 0.6) +
   scale_colour_manual(values = highlight_colors) + 
   scale_y_continuous(position = "right",labels = scales::label_number_si())+
-  scale_x_discrete(limits = years_to_include, expand = c(0, 0))+
+  scale_x_discrete(limits = years_to_include, expand = c(0, 0.3))+
   labs(title = "American Home schooling ",
        subtitle = "Enrollments from 2017 - 2023",
        caption = "Source: Data from The Post's analysis of home-schooling enrollment across the US",
        y = "Population", x = "Year", color = "State") +
   special_theme
 # first save the graph
-ggsave("../output/state.png",plots,width = 160/40, height = 165/40,dpi = 300, units = "in")
+ggsave("../output/state.png",plots,width = 5, height =3,dpi = 300, units = "in")
 # add up the red square as it should be a plot for economist using the libarary magick
 plot_state <- image_read("../output/state.png")
 head <- image_read("../data/Figure/header2.png")
