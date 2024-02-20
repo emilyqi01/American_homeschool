@@ -21,7 +21,7 @@ ggplot(school_state, aes(x = year, y = homeschool_students, group = state, color
   geom_line() +
   geom_point() + 
   theme_minimal() +
-  labs(title = "Population Change Over 6 Years for 30 States",
+  labs(title = "Population Change Over 6 Years for 29 States",
        x = "Year",
        y = "Population") +
     theme(legend.position = "right",  # Positions the legend on the right
