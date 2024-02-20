@@ -8,6 +8,7 @@ The American Homeschool Project aims to examine the trends in U.S. homeschooling
 ## Getting Started
 
 Follow these steps to prepare the data and execute the analysis:
+(note: no need to knit the `qmd` file, they are to view the results immediately for convenience. use the run all button will exactly give the results we need.)
 
 ### Step 1: Data Cleaning
 1. Navigate to the `src/data-cleaning` directory.
@@ -24,19 +25,12 @@ To begin analysis:
 3. Run `district_data_select.qmd` to produce `bar_district_gr_update.png` and `bar_district_cagr_update.png` in the output folder.
 4. These graphs will be utilized for subsequent reporting.
 ### Step 3: Report
-Execute the file in report folder and get the final article
+Render the file `02379566-math70076-assessment-1.qmd` in report folder and get the final article in pdf.
 
 ---
-## Test Folder
-The test directory validates helper functions from the analysis suite. To run the tests, execute `testthat::test_file("tests/testthat/test-cagr.R")` and `testthat::test_file("tests/testthat/test-gr.R")` in the console.
-
-
-
 
 ## Data from The Post's analysis of home-schooling enrollment across the US
 The data set is a CSV file, [home_school_district.csv](https://github.com/washingtonpost/data_home_schooling/blob/main/home_school_district.csv), [home_school_state.csv](https://github.com/washingtonpost/data_home_schooling/blob/main/home_school_state.csv), and a data [dictionary](https://github.com/washingtonpost/data_home_schooling/blob/main/home_school_data_dictionary.csv) explaining each file which were derived from [data_home_schooling](https://github.com/washingtonpost/data_home_schooling.git).
-
-
 
 
 ---
@@ -77,5 +71,8 @@ Building on insights from `state_data_select.qmd`, our analysis narrows the focu
 Two circular bar charts are generated to depict the growth rates of these 40 districts. While the charts appear similar at a glance, their scale ranges differ markedly, which suggests underlying factors may have influenced the surge in homeschooling enrollments between 2019 and 2020.
 
 ---
+## Test Folder
+The test directory validates helper functions from the analysis suite. To run the tests, execute `testthat::test_file("tests/testthat/test-cagr.R")` and `testthat::test_file("tests/testthat/test-gr.R")` in the console.
+
 ## Licensing
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
