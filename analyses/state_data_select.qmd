@@ -73,6 +73,7 @@ selected_states_abbre <- school_state %>%
   filter(state %in% selected_states) %>%
   select(state, Abbreviation) %>%  # Select both state and Abbreviation to keep the grouping context
   distinct()
+
 ```
 
 
