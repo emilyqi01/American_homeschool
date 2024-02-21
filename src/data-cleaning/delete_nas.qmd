@@ -48,7 +48,7 @@ school_district
 # group by state and count
 grouped_school_district <- school_district %>% group_by(lea_name) %>% 
   summarise(count = n())
-grouped_school_district
+
 # deal with nas
 rows_with_na <- apply(school_district, 1, function(row) any(is.na(row)))
 # lists of state names which have NAs
@@ -61,11 +61,11 @@ homeschool_district_update <- school_district %>%
 #check if there is still nas
 summary(homeschool_district_update) 
 # group by state and count
-grouped_school_district= homeschool_district_update %>% group_by(lea_name) %>% 
+grouped_school_district= homeschool_district_update %>% group_by(lea_id) %>% 
   summarise(count = n())%>%
-  filter(count == 6) %>% select(lea_name)
+  filter(count == 6) %>% select(lea_id)
 filtered_school_district <- school_district %>%
-  filter(lea_name %in% grouped_school_district$lea_name)
+  filter(lea_id %in% grouped_school_district$lea_id)
 head(filtered_school_district)
 ```
 ```{r}

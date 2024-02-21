@@ -8,7 +8,10 @@ The American Homeschool Project aims to examine the trends in U.S. homeschooling
 ## Getting Started
 
 Follow these steps to prepare the data and execute the analysis:
-(note: no need to knit the `qmd` file, they are to view the results immediately for convenience. use the run all button will exactly give the results we need.)
+(Note: There is no need to knit the `qmd` file; they are provided to view the results immediately for convenience. Using the "Run All" button will yield the exact results we need.)
+
+For reproducibility, viewers may delete the pictures in the output folder and all derived data in the data/derived folder. However, do not delete the folders themselves, as this may cause errors when saving.
+
 
 ### Step 1: Data Cleaning
 1. Navigate to the `src/data-cleaning` directory.
@@ -20,7 +23,7 @@ Follow these steps to prepare the data and execute the analysis:
 
 To begin analysis:
 
-1. Change directory to `src/analyses`.
+1. Change directory to `analyses`.
 2. Run `state_data_select.qmd` to generate `state_update.png`.
 3. Run `district_data_select.qmd` to produce `bar_district_gr_update.png` and `bar_district_cagr_update.png` in the output folder.
 4. These graphs will be utilized for subsequent reporting.
@@ -40,12 +43,15 @@ The data set is a CSV file, [home_school_district.csv](https://github.com/washin
 We utilize two primary datasets: `home_school_district.csv` and `home_school_state.csv`, sourced from the Washington Post's repository on home schooling.
 
 - `home_school_state.csv` provides six years of home-school enrollment data across 33 states.
-- `home_school_district.csv` contains records from 6,661 districts, with each state comprising a unique set of districts.
+- `home_school_district.csv` contains records from 6,661 districts, with each state comprising a unique set of districts. All districts' information include six years' population of home-schooling, district unique id and district name.
 
 ### Data Cleaning
 
 - Removed all instances of `NA` values from both datasets.
 - Excluded districts with zero enrollments from `home_school_district.csv`.
+- Excluded districts with missing values which means when we group by district id, exclude districts that do not have 6 data information.
+
+
 
 ### Data Integration
 
