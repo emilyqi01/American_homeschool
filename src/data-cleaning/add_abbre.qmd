@@ -57,6 +57,7 @@ state_update
 ```{r}
 #convert year 
 state_update$year <- sub("^(....)-.*", "\\1", state_update$year)
+state_update$year <- as.numeric(state_update$year)
 state_update
 ```
 

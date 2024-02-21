@@ -41,6 +41,7 @@ write.csv(homeschool_update, "../../data/derived/state_update.csv",row.names = F
 school_district <- read.csv("../../data/raw/home_school_district.csv")
 school_district
 school_district$year <- sub("^(....)-.*", "\\1", school_district$year)
+school_district$year <- as.numeric(school_district$year)
 school_district
 ```
 
