@@ -13,7 +13,7 @@ states_abbre
 #' Add State Abbreviation to Data Frame
 #'
 #' This function takes a data frame and adds a new column with state abbreviations.
-#' The state names in the data frame are matched against a reference data frame
+#' The state names in the data frame are matched against a webscraping data frame
 #' containing state names and their corresponding abbreviations. Matching is case-insensitive.
 #' If no abbreviation is found for a state, the full state name is used.
 #'
@@ -25,29 +25,24 @@ states_abbre
 #' @return The original data_frame with an additional column named 'Abbreviation'.
 #' @export
 #' @examples
-#' # Assuming states_abbre is defined elsewhere and available
+#' # Assuming states_abbre is a dataframe contains both the states ant the abbreviation
 #' # df is a data frame with a column "state_name" that contains state names
 #' df_with_abbreviations <- add_state_abbreviation(df, "state_name", states_abbre)
 add_state_abbreviation <- function(data_frame, state_col_name, states_abbre) {
-  # Convert the state column in data_frame to uppercase for case-insensitive matching
+  # Convert to uppercase 
   state_names_upper <- toupper(data_frame[[state_col_name]])
-  
-  # Convert the US.STATE column in states_abbre to uppercase for case-insensitive matching
   states_abbre_upper <- toupper(states_abbre$US.STATE)
   
   # Match the uppercase state names to find corresponding indices in states_abbre
   indices <- match(state_names_upper, states_abbre_upper)
-  
-  # Retrieve abbreviations using the indices found above
   abbreviations <- states_abbre$POSTAL.ABBREVIATION[indices]
   
   # Substitute NA values with the original state name from data_frame
   abbreviations[is.na(abbreviations)] <- data_frame[[state_col_name]][is.na(abbreviations)]
   
-  # Add the abbreviation data as a new column in the original data_frame
+  # Add the abbreviation data as a new column 
   data_frame$Abbreviation <- abbreviations
   
-  # Return the updated data_frame
   return(data_frame)
 }
 ```
@@ -60,7 +55,7 @@ state_update$Abbreviation[state_update$state == "DISTRICT OF COLUMBIA"] = "DC"
 state_update 
 ```
 ```{r}
-#convert year
+#convert year 
 state_update$year <- sub("^(....)-.*", "\\1", state_update$year)
 state_update
 ```
