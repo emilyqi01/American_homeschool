@@ -2,8 +2,6 @@ First, we will have a dataset with 29 states of America. Each state hs completed
 
 ```{r}
 library(dplyr)
-library(grid)
-library(gridExtra)
 library(ggthemes)
 library(magick)
 # read the data

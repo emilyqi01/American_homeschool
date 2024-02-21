@@ -1,11 +1,11 @@
 
 ```{r}
 library(dplyr)
-library(purrr)
 library(ggplot2)
 library(tidyverse)
 library(scales)
 library(magick)
+library(ggthemes)
 source('../analyses/helper-function/compound_annual_gr.R')
 source('../analyses/helper-function/growth_rate.R')
 school_district <- read.csv("../data/derived/district_update.csv")
@@ -231,7 +231,6 @@ highlight_colors <- c("#17648d", "#51bec7", "#d6ab63", "#008c8f", "#843844", "#a
 coordy <- tibble('coordylocation' = seq(from = min(allplotdata$proportion), to = max(allplotdata$proportion), 30),
                  'coordytext' = as.character(round(coordylocation, 0)),
                  'x' = 1)
-griddata <- expand.grid('locationx' = firstxid[-1], 'locationy' = coordy$coordylocation)
 
 names(highlight_colors) <- allplotdata$state %>% unique()
 plot2 = ggplot() + theme_economist() +
@@ -244,9 +243,6 @@ plot2 = ggplot() + theme_economist() +
   geom_text(data = segment_data, aes(x = labelx, label = label), y = -15,size = unit(2.5,"pt")) + 
   geom_text(data = coordy, aes(x = x, y = coordylocation, label = coordytext),
             color="grey", size=unit(2.5,"pt"), angle=0) + 
-  geom_segment(data = griddata, 
-               aes(x = locationx-0.5, xend = locationx + 0.5, y = locationy, yend = locationy),
-               colour = "grey", alpha=0.8, size=2) + 
   labs(title = "A District-Level of Home School Growth in the U.S. ",
        subtitle = "Percentage of Growth rates from 2019-2020",
        caption = "Source:  Data from The Post's analysis of home-schooling enrollment across the US",
